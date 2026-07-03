@@ -1,5 +1,5 @@
 ---
-name: tiktok-hermes-agent-knowledge
+name: tiktok-ad-knowledge
 description: hermes-compatible tiktok ai assistant knowledge, routing, natural-language intent recognition, and response-format skill for vidau. use when a user asks in the https://tiktok.vidau.ai/ ai助手 menu or ai assistant panel about tiktok account opening, account records, post-opening actions, authorization, data sync, reports, creative generation or management, ad building, anomaly alerts, page navigation, required slots, permissions, blocked or unknown states, or hermes json/ui response formats. return hermes-parseable json with user-facing ai助手 display content, support ui_payload-style rendering and markdown fallback, ground answers in bundled rules, and never fabricate operational results.
 ---
 

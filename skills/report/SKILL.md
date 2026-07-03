@@ -1,12 +1,12 @@
 ---
-name: tiktok-hermes-report
+name: tiktok-ad-report
 description: Use when generating TikTok daily or weekly advertising reports in Hermes for Vidau. Applies to client-readable TikTok performance reports, daily reports, weekly reports, account/campaign/ad/adgroup/creative summaries, period-over-period changes, problem ads, excellent ads, creative highlights, risk reminders, optimization recommendations, and next-day or next-week actions. Must use only authorized TikTok ad accounts on https://tiktok.vidau.ai/accounts with positive balance and display report output primarily in the AI Assistant page on https://tiktok.vidau.ai/; if AI Assistant rendering fails after 10 verified attempts, return the readable report content in the current conversation instead of raw JSON.
 license: MIT
 metadata:
   hermes:
     version: 2.2.0
     tags: [tiktok, ads, report, daily-report, weekly-report, vidau, hermes]
-    related_skills: [tiktok-hermes-ad-inspection, tiktok-hermes-ad-creation, tiktok-hermes-agent-knowledge]
+    related_skills: [tiktok-ad-inspection, tiktok-ad-creation, tiktok-ad-knowledge]
 ---
 
 # TikTok Hermes Daily / Weekly Report Skill

@@ -1,5 +1,5 @@
 ---
-name: tiktok-hermes-ad-creation
+name: tiktok-ad-creation
 description: Use when creating TikTok ads on https://tiktok.vidau.ai, opening the Vidau ad creation page, explaining the delivery hierarchy, inspecting account/ad/creative counts, monitoring creation status, retrying retryable failures, or opening the warning center after success. Closed-loop workflow for Vidau self-built TikTok ad platform.
 version: 1.0.0
 author: Hermes Agent

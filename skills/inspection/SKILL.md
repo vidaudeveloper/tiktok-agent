@@ -1,5 +1,5 @@
 ---
-name: tiktok-hermes-ad-inspection
+name: tiktok-ad-inspection
 description: strict tiktok ad inspection and anomaly diagnosis for hermes on the vidau platform. use when the user asks to inspect tiktok advertising data or enters trigger terms including 查看数据, 投放数据, 看一下数据, 数据分析, 数据建议, 数据监控, 排查数据, 观察数据, 素材分析, 数据情况, 监控数据, 数据巡检, or after successful ad creation. supports spend, conversions, cpa, roas, budget exhaustion, creative fatigue, daily inspection inquiry, hermes json, and safe ai assistant ui payloads. outputs recommendations only and never executes budget, bid, targeting, status, creative, notification, or schedule changes.
 ---
 
