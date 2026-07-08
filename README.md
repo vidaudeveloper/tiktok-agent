@@ -1,100 +1,143 @@
-# TikTok Ad Toolkit
+# TikTok Ads MCP — 广告智能工具集 v2.0.0
 
 <p align="center">
-  <strong>TikTok 广告平台智能工具集</strong><br>
-  基于 Hermes Agent 的广告创建 · 数据巡检 · 知识问答 · 投放报告
+  <strong>TikTok 广告平台 MCP 工具集</strong><br>
+  直连 HTTP · 无需登录 · 极速响应 · 三合一模块
 </p>
 
 ---
 
-## ✨ 功能模块
+## 版本更新：v1.0.0 → v2.0.0
 
-### 🎯 广告创建 （creation）
-- **全链路闭环创建** — 从账户到素材的一站式广告搭建
-- **智能字段校验** — 自动校验必填项，缺失字段预填提示
-- **自动错误恢复** — 创建失败自动重试可恢复错误
-- **可选预警监控** — 创建成功后一键接入预警中心
-
-### 🔍 数据巡检 （inspection）
-- **8 大异常检测维度** — 花费、转化、CPA、ROAS、预算、素材疲劳等
-- **数据驱动诊断** — 基于真实投放数据的异常归因与优先级排序
-- **建议式输出** — 仅输出诊断建议，不执行任何操作
-- **按需巡检** — 支持随时发起巡检请求
-
-### 📚 知识问答 （knowledge）
-- **自然语言理解** — 识别用户意图并精准路由到对应业务模块
-- **10 大业务覆盖** — 开户、授权、同步、报表、素材、搭建、预警等
-- **结构化响应** — 自动生成卡片式回答，图文并茂、清晰易读
-- **智能补问引导** — 自动识别缺失信息并引导补充
-
-### 📊 投放报告 （report）
-- **一键生成日报/周报** — Markdown 卡片式报告，清晰易读
-- **智能账户筛选** — 自动过滤已授权且余额充足的账户
-- **完整报告体系** — 核心指标、环比趋势、异常/优秀广告、优化建议、风险提醒
-- **优雅降级机制** — 富文本渲染不可用时自动降级为纯文本输出
+| 维度 | v1.0.0 (Hermes) | v2.0.0 (MCP) |
+|------|----------------|--------------|
+| 架构 | Hermes Agent Runtime | **MCP HTTP JSON-RPC 直连** |
+| 登录 | 需要 VidAU SSO | **不需要登录** |
+| 速度 | 慢（需浏览器） | **极快（~1s/调用）** |
+| 模块数 | 4 个独立子模块 | **1 个主 Skill + 1 个知识库子 Skill** |
+| 广告创建 | 浏览器模拟 | **MCP 工具直接调用** |
+| 数据巡检 | 页面抓取 | **两步滤波法 < 10s** |
 
 ---
 
-## 🚀 快速开始
+## 功能模块
 
-### 环境要求
+### MCP 主 Skill — 三合一
 
-| 要求 | 说明 |
-|------|------|
-| 运行平台 | Hermes Agent Runtime |
-| 浏览器 | Chrome（推荐）/ Chromium |
+集成广告创建、AI 巡检、日报/周报三大模块于一个 Skill：
 
-### 安装
+- **广告创建**：账户检查 → Campaign 创建 → Adgroup 创建 → Ad 创建，全程 MCP 直连
+- **AI 巡检**：花费异常、转化异常、CPA 异常、ROAS 异常、预算耗尽、素材疲劳 — 六类异常自动检测
+- **日报/周报**：一键生成，支持自定义日期和账户过滤
 
-1. 登录 TikTok 智能投放平台
-2. 进入 **Hermes Skill 管理页面**
-3. 上传本工具集根目录（包含 `SKILL.md` 的文件夹）
-4. 等待系统解析并激活全部子模块
-5. 在 AI 助手页面即可使用
+### 知识库子 Skill（skills/knowledge）
+
+- 自然语言意图识别与业务路由
+- TikTok 广告平台知识问答
+- Hermes AI 助手面板 JSON 响应格式
 
 ---
 
-## 💬 使用示例
+## 快速开始
+
+### 方式一：一键安装（推荐）
+
+直接复制 [INSTALL_PROMPT.md](INSTALL_PROMPT.md) 中的安装提示词，粘贴到 WorkBuddy / Hermes / Cursor 对话中。
+
+### 方式二：手动安装
+
+1. 克隆本仓库
+2. 将根目录 `SKILL.md` 导入到 WorkBuddy / Hermes 的 Skill 管理中
+3. 将 `skills/knowledge/` 目录也作为子 Skill 导入
+4. （可选）配置 MCP 服务器端点
+
+### 方式三：MCP 直连
+
+Skill 内置了 HTTP 直连方式，无需额外配置即可使用。如需配置标准 MCP 端点，参考 [INSTALL_PROMPT.md](INSTALL_PROMPT.md)。
+
+---
+
+## 10 个 MCP 工具
+
+| # | 工具 | 用途 |
+|---|------|------|
+| 1 | `list_advertisers` | 列出所有广告主及其状态 |
+| 2 | `get_alerts` | 获取系统预警 |
+| 3 | `get_campaigns` | 获取 Campaign 列表 |
+| 4 | `create_campaign` | 创建 Campaign |
+| 5 | `get_adgroups` | 获取 Adgroup 列表 |
+| 6 | `create_adgroup` | 创建 Adgroup |
+| 7 | `get_ads` | 获取 Ad 列表 |
+| 8 | `create_ad` | 创建 Ad |
+| 9 | `get_daily_metrics` | 获取日报指标 |
+| 10 | `sync_advertiser_data` | 同步实体数据 |
+
+---
+
+## 速度优化：两步滤波法
+
+传统方式对全部 27 个账户做深度查询 → **5 分钟**。两步滤波法：
+
+1. `list_advertisers` → 过滤 `campaignsCount > 0`
+2. 并行 `get_daily_metrics(level=ADVERTISER)` → 只查有数据的账户
+
+**结果：< 10 秒，速度提升 30 倍。**
+
+---
+
+## 使用示例
 
 | 你说 | 动作 |
 |------|------|
-| 「帮我创建一个TikTok广告」 | 触发 creation 模块，引导完成广告搭建 |
-| 「看看昨天的投放数据怎么样」 | 触发 inspection 模块，输出巡检诊断 |
-| 「怎么开通TikTok广告账户？」 | 触发 knowledge 模块，返回开户指引 |
-| 「生成一份本周的投放周报」 | 触发 report 模块，输出完整周报卡片 |
+| 「帮我创建一个 TikTok 广告」 | 进入参数收集流程，逐步创建 |
+| 「看看今天的投放数据」 | 输出巡检摘要，标注异常指标 |
+| 「生成本周周报」 | 输出完整的周报卡片 |
+| 「TikTok 广告层级是什么？」 | 知识库返回三级结构解释 |
+| 「打开广告面板」 | 在本机 Chrome 中打开平台 |
 
 ---
 
-## ⚠️ 注意事项
-
-1. 所有操作需要 TikTok 广告账户已在平台完成授权
-2. 数据分析默认仅处理余额 > 0 的账户
-3. 执行分析前请确保已完成最新数据同步
-4. 高风险操作将弹出确认提示
-
----
-
-## 📁 目录结构
+## 目录结构
 
 ```
-tiktok-ad-toolkit/
-├── SKILL.md                    # 工具集入口
-├── README.md                   # 本文件
+tiktok-agent/
+├── SKILL.md                         # MCP 主 Skill（广告创建+巡检+报表）
+├── README.md                        # 本文件
+├── INSTALL_PROMPT.md                # 一键安装提示词
 ├── references/
-│   └── setup.md                # 安装与配置详解
+│   ├── ad-creation-flow.md          # 广告创建详细流程
+│   ├── ad-inspection-rules.md       # AI 巡检规则详解
+│   ├── report-format.md             # 日报/周报格式规范
+│   ├── source_and_validation.md     # 知识库来源与验证说明
+│   └── setup.md                     # 安装与配置指南
+├── agents/
+│   └── openai.yaml                  # Agent 接口配置
 ├── assets/
-│   └── icon.svg                # 工具集图标
+│   └── icon.svg                     # 工具集图标
 └── skills/
-    ├── creation/               # 广告创建模块
-    ├── inspection/             # 数据巡检模块
-    ├── knowledge/              # 知识问答模块
-    └── report/                 # 投放报告模块
+    └── knowledge/                   # 知识库子 Skill（意图路由+问答）
+        ├── SKILL.md
+        └── references/
+            └── source_and_validation.md
 ```
 
 ---
 
-## 版本
+## 注意事项
 
-**v1.0.0** · 2026-07-03 · MIT License
+1. MCP 直连方式不需要浏览器登录，但需要有效的 API Key
+2. 巡检和日报不会自动同步数据（sync 太慢），请在平台手动刷新
+3. 非 VidAU 开通的 TikTok 账户仅支持数据查看和报表
+4. 所有高风险操作（创建广告、修改预算等）均需用户明确确认
+5. `balance` 字段为字符串类型，需要 `float()` 转换后再格式化
 
-兼容 Hermes Agent Runtime
+---
+
+## 版本历史
+
+- **v2.0.0** (2026-07-08)：MCP 架构升级，三合一模块，直连 HTTP，速度提升 30 倍
+- **v1.0.0** (2026-07-03)：Hermes 初始版本，4 个独立子模块
+
+---
+
+MIT License

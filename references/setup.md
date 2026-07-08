@@ -1,156 +1,168 @@
-# TikTok Ad Toolkit — 安装与配置指南
+# TikTok Ads MCP — 安装与配置指南 v2.0.0
+
+## 架构对比：v1.0.0 vs v2.0.0
+
+| 维度 | v1.0.0 | v2.0.0 |
+|------|--------|--------|
+| 运行方式 | Hermes Agent + 浏览器模拟 | **MCP HTTP JSON-RPC 直连** |
+| 需要登录 | 是（VidAU SSO） | **否（API Key 认证）** |
+| 子模块数 | 4 个独立 Skill | **1 个主 Skill + 1 个知识库 Skill** |
+| 响应速度 | 慢 | **极快（~1s/调用）** |
+
+---
 
 ## 安装前准备
 
 ### 环境要求
 
-1. **Vidau 平台账号**: 需要有效的 https://tiktok.vidau.ai/ 账号
-2. **TikTok 广告账户**: 至少一个已授权的 TikTok 广告账户
-3. **Hermes 运行时**: 支持 Skill 上传和执行的 Hermes Agent 环境
-4. **浏览器**: 推荐 Chrome 或 Chromium（用于页面交互）
+1. AI Agent 运行环境（WorkBuddy / Hermes / Cursor / Claude Desktop 等）
+2. 支持 Skill 上传和管理的平台
+3. 有效的 API Key（已内置在 Skill 文件中）
+4. TikTok 广告账户（已在 VidAU 平台授权）
 
 ### 权限检查清单
 
-在安装前，请确认以下权限已开通：
-
-- [ ] Vidau 平台登录权限
-- [ ] TikTok 广告账户查看权限
-- [ ] 数据同步权限（账户、广告系列、广告组、广告、素材）
-- [ ] AI 助手使用权限
-- [ ] 报告生成权限
-
-## 安装步骤
-
-### 方式一：通过 Hermes 管理页面上传
-
-1. 打开 Hermes 管理界面
-2. 进入 **Skills** / **技能管理** 页面
-3. 点击 **上传 Skill** 或 **导入**
-4. 选择本工具集根目录（包含 `SKILL.md` 的文件夹）
-5. 等待系统自动解析目录结构
-6. 确认所有 4 个子模块已被识别：
-   - ✅ skills/creation (广告创建)
-   - ✅ skills/inspection (数据巡检)
-   - ✅ skills/knowledge (知识问答)
-   - ✅ skills/report (投放报告)
-7. 点击 **激活** 完成安装
-
-### 方式二：命令行部署（如支持）
-
-```bash
-# 假设 Hermes CLI 可用
-hermes skill install ./tiktok-ad-toolkit
-hermes skill activate tiktok-ad-toolkit
-```
-
-## 配置说明
-
-### 默认配置
-
-工具集开箱即用，无需额外配置。以下为默认行为：
-
-| 配置项 | 默认值 | 说明 |
-|--------|--------|------|
-| 平台 URL | `https://tiktok.vidau.ai/` | Vidau 主平台 |
-| AI 助手入口 | `/Ai` 或首页默认 | 对话面板入口 |
-| 广告创建页 | `/campaigns/ads` | 创建/管理广告 |
-| 账户管理页 | `/accounts` | 查看授权账户 |
-| 重试次数 | 3 次 | 创建失败重试 |
-| 报告展示重试 | 10 次 | AI 助手展示失败重试 |
-| 日报日期 | 当前日期 | 未指定时的默认值 |
-| 周报范围 | 最近 7 天 | 未指定时的默认值 |
-
-### 可选配置项（如有需要）
-
-#### 自定义目标 CPA/ROAS
-
-如果您的业务有特定的 CPA 或 ROAS 目标，可以在各子模块的 SKILL.md 中调整对应阈值：
-
-- **巡检模块**: `skills/inspection/SKILL.md` 中的异常判断规则
-- **报告模块**: `skills/report/SKILL.md` 中的问题/优秀广告判断逻辑
-
-#### 自定义巡检时间窗口
-
-在 `skills/inspection/references/inspection_workflow.md` 中可调整：
-- 历史对比天数
-- 素材疲劳判定天数
-- 花费异常检测阈值
-
-## 验证安装
-
-### 功能验证清单
-
-安装完成后，建议按顺序验证以下功能：
-
-#### 1. 知识库路由验证
-```
-输入: "TikTok 广告层级是什么？"
-预期: knowledge 模块返回正确的层级结构说明
-```
-
-#### 2. 数据查看验证
-```
-输入: "查看投放数据"
-预期: inspection 模块返回当前账户的巡检摘要
-```
-
-#### 3. 报告生成验证
-```
-输入: "生成 TikTok 日报"
-预期: report 模块在 AI 助手中展示完整日报内容
-```
-
-#### 4. 广告创建验证
-```
-输入: "帮我创建一条 TikTok 广告"
-预期: creation 模块进入字段校验流程，提示缺失必填项
-```
-
-## 常见问题
-
-### Q: 上传后看不到子模块？
-**A**: 请确保上传的是包含 `SKILL.md` 的完整目录，而不是单个文件。
-
-### Q: AI 助手无法显示报告？
-**A**:
-1. 确认已登录 Vidau 平台
-2. 确认有已授权且余额 > 0 的账户
-3. 尝试刷新页面后重新提交请求
-4. 检查浏览器控制台是否有错误
-
-### Q: 巡检结果显示"数据不足"？
-**A**:
-1. 先执行一次数据同步（点击"同步实体数据"）
-2. 确认账户状态正常且已启用
-3. 新账户可能需要等待一定时间的积累数据
-
-### Q: 创建广告时一直提示缺少字段？
-**A**:
-这是正常的安全机制。creation 模块会严格校验所有必填字段。请按照提示补充：
-- 账户信息（advertiser_id, advertiser_name）
-- 广告系列设置（objective, budget, name）
-- 广告组设置（targeting, bid_strategy, schedule）
-- 广告设置（creative, text, landing_page）
-
-## 升级与维护
-
-### 版本更新
-
-当有新版本发布时：
-1. 备份当前版本的配置和自定义修改
-2. 下载新版本的工具集包
-3. 通过 Hermes 管理页面重新上传
-4. 验证所有子模块正常工作
-5. 如有必要，重新应用自定义配置
-
-### 日志与调试
-
-如需调试问题，可以：
-1. 在 Hermes 设置中开启 debug 模式
-2. 查看 AI 助手的原始 JSON 输出
-3. 检查浏览器开发者工具中的网络请求和控制台日志
-4. 联系平台管理员获取更多技术支持
+- [ ] VidAU 平台已授权的 TikTok 广告账户
+- [ ] 账户余额充足（或至少有一个余额 > 0 的账户）
+- [ ] AI Agent 环境支持 skill 导入
 
 ---
 
-*最后更新: 2026-07-03*
+## 安装步骤
+
+### 方式一：一键安装（推荐）
+
+1. 打开 [INSTALL_PROMPT.md](../INSTALL_PROMPT.md)
+2. 将完整提示词复制粘贴到 AI Agent 对话中
+3. AI Agent 将自动完成 skill 安装、MCP 配置和功能验证
+
+### 方式二：手动安装
+
+#### Step 1: 安装主 Skill
+
+1. 打开 AI Agent 的 Skill 管理面板
+2. 导入仓库根目录的 `SKILL.md` 文件
+3. 确认 `ads-tiktok-mcp` skill 已被识别并激活
+
+#### Step 2: 安装知识库子 Skill
+
+1. 进入 `skills/knowledge/` 目录
+2. 将该目录（或目录中的 `SKILL.md`）导入到 Skill 管理中
+3. 确认 `tiktok-hermes-agent-knowledge` skill 已被识别
+
+#### Step 3: 验证安装
+
+在对话中依次测试以下命令：
+
+```
+# 1. 知识问答
+TikTok 广告层级是什么？
+
+# 2. 数据巡检
+查看投放数据
+
+# 3. 广告创建（不会真的创建，会提示缺失字段）
+帮我创建一条 TikTok 广告
+
+# 4. 日报生成
+生成 TikTok 日报
+```
+
+---
+
+## MCP 配置说明
+
+### Skill 内置直连（默认，无需额外配置）
+
+主 Skill 内置了 HTTP 直连方式，使用以下配置：
+
+```python
+API_KEY = "tk_fae260ca0edb863a44c8a0c28d839de15c6659f7d64b56dc"
+TOOLS_URL = "https://tiktok.vidau.ai/api/mcp/tools"
+```
+
+无需额外配置即可使用。
+
+### 标准 MCP 端点配置（可选）
+
+如需在 WorkBuddy 的 MCP 配置中使用，在 `~/.workbuddy/mcp.json` 中添加：
+
+```json
+{
+  "mcpServers": {
+    "tiktok-ads": {
+      "url": "https://tiktok.vidau.ai/api/mcp/tools",
+      "headers": {
+        "Authorization": "Bearer tk_fae260ca0edb863a44c8a0c28d839de15c6659f7d64b56dc"
+      }
+    }
+  }
+}
+```
+
+---
+
+## 默认配置
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| 平台 URL | `https://tiktok.vidau.ai/` | VidAU 主平台 |
+| MCP 端点 | `/api/mcp/tools` | JSON-RPC 工具端点 |
+| 请求超时 | 15 秒 | 单次 MCP 请求 |
+| 并行超时 | 30 秒 | as_completed timeout |
+| 并行线程数 | 5 | ThreadPoolExecutor |
+| 巡检方法 | 两步滤波法 | 先过滤空账户再查数据 |
+
+---
+
+## 可选配置项
+
+### 自定义巡检阈值
+
+在 `references/ad-inspection-rules.md` 中可调整各类异常的触发阈值：
+
+- CPA 异常：目标 CPA × 1.3 → 可调整为 × 1.2 或 × 1.5
+- ROAS 异常：目标 ROAS × 0.7 → 可调整为 × 0.6 或 × 0.8
+- 预算耗尽：花费/预算 ≥ 70% → 可调整为 60% 或 80%
+- 素材疲劳：CTR < 历史 × 0.7 → 可调整为 × 0.6 或 × 0.8
+
+### 自定义报告格式
+
+在 `references/report-format.md` 中可调整日报/周报的输出格式和内容。
+
+---
+
+## 常见问题
+
+### Q: 提示 API Key 无效？
+A: 联系管理员更新 SKILL.md 中的 `API_KEY` 变量值。
+
+### Q: 巡检结果为空？
+A:
+1. 确认至少有一个 `campaignsCount > 0` 的已授权账户
+2. 在平台手动执行一次数据同步
+3. 检查账户余额是否 > 0
+
+### Q: 创建广告一直提示缺少字段？
+A: 这是安全机制。请按提示依次补充：账户信息、推广目标、优化目标、素材、定向、预算、出价。
+
+### Q: `sync_advertiser_data` 超时怎么办？
+A: 这是已知问题（大账户同步 60s+）。建议在平台手动刷新，巡检和日报场景不依赖此接口。
+
+### Q: 如何切换回浏览器模式？
+A: 回复"打开广告面板"，AI 会在本机启动 Chrome 打开 VidAU 平台。
+
+---
+
+## 升级指南
+
+从 v1.0.0 升级到 v2.0.0：
+
+1. 备份旧的 skill 配置
+2. 删除旧的 4 个子 skill（creation / inspection / knowledge / report）
+3. 安装新的 `ads-tiktok-mcp` 主 Skill 和 `tiktok-hermes-agent-knowledge` 知识库 Skill
+4. 验证功能正常
+
+---
+
+*最后更新: 2026-07-08 · v2.0.0*
