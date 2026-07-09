@@ -20,7 +20,7 @@ tags: [tiktok, ads, mcp, sse, fast]
 # 永远用这段代码，放入 execute_code
 import requests, json
 
-API_KEY = "tk_fae260ca0edb863a44c8a0c28d839de15c6659f7d64b56dc"
+API_KEY = "tk_1bfa861961110ed257b517680da9efeb5xxxxxxxxxxxxxxx"
 TOOLS_URL = "https://tiktok.vidau.ai/api/mcp/tools"
 
 def mcp(name, args=None):
@@ -521,7 +521,7 @@ mcp("sync_advertiser_data", {
 import requests, json, concurrent.futures
 from datetime import datetime, timedelta
 
-API_KEY = "tk_fae260ca0edb863a44c8a0c28d839de15c6659f7d64b56dc"
+API_KEY = "tk_1bfa861961110ed257b517680da9efeb5xxxxxxxxxxxxxxx"
 TOOLS_URL = "https://tiktok.vidau.ai/api/mcp/tools"
 
 def mcp(name, args=None, timeout=15):

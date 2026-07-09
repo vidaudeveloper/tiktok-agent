@@ -77,7 +77,7 @@ TikTok 广告层级是什么？
 主 Skill 内置了 HTTP 直连方式，使用以下配置：
 
 ```python
-API_KEY = "tk_fae260ca0edb863a44c8a0c28d839de15c6659f7d64b56dc"
+API_KEY = "tk_1bfa861961110ed257b517680da9efeb5xxxxxxxxxxxxxxx"
 TOOLS_URL = "https://tiktok.vidau.ai/api/mcp/tools"
 ```
 
@@ -90,11 +90,8 @@ TOOLS_URL = "https://tiktok.vidau.ai/api/mcp/tools"
 ```json
 {
   "mcpServers": {
-    "tiktok-ads": {
-      "url": "https://tiktok.vidau.ai/api/mcp/tools",
-      "headers": {
-        "Authorization": "Bearer tk_fae260ca0edb863a44c8a0c28d839de15c6659f7d64b56dc"
-      }
+    "tiktok-ads-agent": {
+      "url": "https://tiktok.vidau.ai/api/mcp/sse?apiKey=tk_1bfa861961110ed257b517680da9efexxxxxxxxxxxxxxx"
     }
   }
 }
@@ -107,7 +104,7 @@ TOOLS_URL = "https://tiktok.vidau.ai/api/mcp/tools"
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
 | 平台 URL | `https://tiktok.vidau.ai/` | VidAU 主平台 |
-| MCP 端点 | `/api/mcp/tools` | JSON-RPC 工具端点 |
+| MCP 端点 | `/api/mcp/sse` | SSE 端点（带 apiKey 参数） |
 | 请求超时 | 15 秒 | 单次 MCP 请求 |
 | 并行超时 | 30 秒 | as_completed timeout |
 | 并行线程数 | 5 | ThreadPoolExecutor |

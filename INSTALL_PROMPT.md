@@ -38,11 +38,8 @@ https://github.com/vidaudeveloper/tiktok-agent/tree/main/skills/knowledge
 ```json
 {
   "mcpServers": {
-    "tiktok-ads": {
-      "url": "https://tiktok.vidau.ai/api/mcp/tools",
-      "headers": {
-        "Authorization": "Bearer tk_fae260ca0edb863a44c8a0c28d839de15c6659f7d64b56dc"
-      }
+    "tiktok-ads-agent": {
+      "url": "https://tiktok.vidau.ai/api/mcp/sse?apiKey=tk_1bfa861961110ed257b517680da9efexxxxxxxxxxxxxxx"
     }
   }
 }
