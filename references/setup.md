@@ -91,7 +91,7 @@ TOOLS_URL = "https://tiktok.vidau.ai/api/mcp/tools"
 {
   "mcpServers": {
     "tiktok-ads-agent": {
-      "url": "https://tiktok.vidau.ai/api/mcp/sse?apiKey=tk_1bfa861961110ed257b517680da9efexxxxxxxxxxxxxxx"
+      "url": "https://tiktok.vidau.ai/api/mcp/sse?apiKey=tk_1bfa861961110ed257b517680da9efeb5xxxxxxxxxxxxxxx"
     }
   }
 }
