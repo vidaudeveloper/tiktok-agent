@@ -1,4 +1,4 @@
-# TikTok Ads MCP — 广告智能工具集 v2.0.0
+# TikTok Ads MCP — 广告智能工具集 v2.1.0
 
 <p align="center">
   <strong>TikTok 广告平台 MCP 工具集</strong><br>
@@ -35,6 +35,7 @@
 - 自然语言意图识别与业务路由
 - TikTok 广告平台知识问答
 - Hermes AI 助手面板 JSON 响应格式
+- ✅ v2.1.0 已内置 MCP 执行层配置（`related_skills: [ads-tiktok-mcp]`），自动使用两步滤波法等优化策略
 
 ---
 
@@ -135,6 +136,7 @@ tiktok-agent/
 
 ## 版本历史
 
+- **v2.1.0** (2026-07-09)：知识库 skill 升级 — 内置 MCP 执行层关联（`related_skills: [ads-tiktok-mcp]`），source_and_validation 新增 MCP 执行层说明
 - **v2.0.0** (2026-07-08)：MCP 架构升级，三合一模块，直连 HTTP，速度提升 30 倍
 - **v1.0.0** (2026-07-03)：Hermes 初始版本，4 个独立子模块
 

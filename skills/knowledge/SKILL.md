@@ -1,6 +1,7 @@
 ---
 name: tiktok-hermes-agent-knowledge
 description: hermes-compatible tiktok ai assistant knowledge, routing, natural-language intent recognition, and response-format skill for vidau. use when a user asks in the https://tiktok.vidau.ai/ ai助手 menu or ai assistant panel about tiktok account opening, account records, post-opening actions, authorization, data sync, reports, creative generation or management, ad building, anomaly alerts, page navigation, required slots, permissions, blocked or unknown states, or hermes json/ui response formats. return hermes-parseable json with user-facing ai助手 display content, support ui_payload-style rendering and markdown fallback, ground answers in bundled rules, and never fabricate operational results.
+related_skills: [ads-tiktok-mcp]
 ---
 
 # TikTok Hermes Agent Knowledge
@@ -107,8 +108,8 @@ Primary trigger:
 
 Natural-language triggering:
 - Support natural-language input. The user does not need to use fixed commands.
-- Interpret short, incomplete, or colloquial requests such as “帮我创建广告”, “看下账户数据”, “同步这个广告账户”, “为什么没消耗”, “帮我打开广告搭建页面”.
-- Extract intent, module, required slots, missing slots, risk level, page action, and backend tool intent from the user’s language.
+- Interpret short, incomplete, or colloquial requests such as "帮我创建广告", "看下账户数据", "同步这个广告账户", "为什么没消耗", "帮我打开广告搭建页面".
+- Extract intent, module, required slots, missing slots, risk level, page action, and backend tool intent from the user's language.
 - If the request is ambiguous, return `clarification_required` instead of guessing.
 
 AI助手 display rule:
@@ -145,11 +146,11 @@ Do not use this skill for:
 Accept natural-language input from the AI助手 conversation panel.
 
 Common input types:
-- Direct task request: “帮我创建 TikTok 广告”, “同步这个广告账户”, “生成日报”.
-- Data analysis request: “看下昨天哪个广告有问题”, “为什么 CPA 升高了”.
-- Page navigation request: “打开广告搭建页面”, “进入授权页面”.
-- Knowledge question: “TikTok 广告系列和广告组有什么区别”.
-- Follow-up confirmation: “确认提交”, “继续”, “不要发布，只保存草稿”.
+- Direct task request: "帮我创建 TikTok 广告", "同步这个广告账户", "生成日报".
+- Data analysis request: "看下昨天哪个广告有问题", "为什么 CPA 升高了".
+- Page navigation request: "打开广告搭建页面", "进入授权页面".
+- Knowledge question: "TikTok 广告系列和广告组有什么区别".
+- Follow-up confirmation: "确认提交", "继续", "不要发布，只保存草稿".
 
 Required input depends on module:
 - Account/report/sync requests require advertiser ID, advertiser name, or selected account context.
@@ -180,7 +181,7 @@ Follow this standard execution sequence:
 
 1. Identify whether the request comes from the Vidau TikTok AI助手 context.
 2. Classify intent and route to the correct canonical module.
-3. Extract available slots from the user’s natural language and page context.
+3. Extract available slots from the user's natural language and page context.
 4. Check whether required slots are complete.
 5. Check authorization, account source, sync freshness, permission scope, and backend tool availability when relevant.
 6. Determine risk level:
@@ -482,7 +483,7 @@ Use these when relevant:
 - Open account form: `tiktok_open_account_form`
 - Open records: `tiktok_open_records`
 - Post-open actions: `tiktok_post_open_actions`
-- OAuth authorization: `tiktok_oauth_authorization`
+- OAuth authorization: `tiktok_authorization`
 - Authorized advertisers: `tiktok_authorized_advertisers`
 - Data sync: `tiktok_data_sync`
 - Sync result/progress: `tiktok_sync_result`, `tiktok_sync_progress`
@@ -499,6 +500,50 @@ Use these when relevant:
 - Alert rules: `tiktok_alert_rules`
 - Alert detail: `tiktok_alert_detail`
 - Anomaly diagnosis: `tiktok_anomaly_diagnosis`
+
+## 执行上下文说明
+
+### 两种运行模式
+
+本 skill 可在两种模式下运行，行为不同：
+
+**模式 A：Hermes AI助手面板（默认）**
+- 用户在 `https://tiktok.vidau.ai/` 的 AI助手面板提问
+- Hermes 平台自动调用本 skill，AI助手渲染 JSON 回复
+- 工具调用由 Hermes 平台层处理，本 skill 只需输出路由 JSON
+
+**模式 B：Vidau Agent 对话（`ads-tiktok-mcp` 配合）**
+- 用户在本对话中提问（如"帮我创建广告"、"看下账户"）
+- 本 skill 定义路由和知识，**实际执行靠 `ads-tiktok-mcp` 的 MCP 工具**
+- 每次使用必须先加载 `ads-tiktok-mcp` skill
+
+### 模块 → MCP 工具映射
+
+| 模块 | MCP 工具 | 用途 |
+|------|---------|------|
+| `tiktok_router` / 任意模块 | `list_advertisers` | 列出所有广告账户（ID、名称、余额、状态、Campaign 数） |
+| `tiktok_campaign_building` | `create_campaign`, `create_adgroup`, `create_ad` | 创建广告系列/广告组/广告 |
+| `tiktok_campaign_building` | `get_campaigns`, `get_adgroups`, `get_ads` | 查询已有广告系列/组/广告 |
+| `tiktok_data_report_analysis` | `get_daily_metrics` | 日报/周报/月报指标（`level=ADVERTISER` 最快且唯一有数据） |
+| `tiktok_data_sync` | `sync_advertiser_data` | 同步广告实体数据（⚠️ 慢，巡检场景不要调） |
+| `tiktok_anomaly_alert` | `get_alerts`, `get_daily_metrics` | 获取预警 + 指标阈值对比 |
+| `tiktok_authorization` | `list_advertisers` | 查看已授权账户列表 |
+| `tiktok_open_account` | 无MCP工具，走浏览器 | 开户申请 |
+| `tiktok_open_records` | 无MCP工具，走浏览器 | 开户记录查询 |
+| `tiktok_post_open_actions` | 无MCP工具，走浏览器 | 充值/BC绑定 |
+| `tiktok_creative_management` | `create_ad`（带素材参数） | 上传素材到广告 |
+| `tiktok_ad_knowledge_qa` | 无MCP工具 | 纯知识问答 |
+
+### MCP 调用关键规则（模式 B）
+
+1. **两步滤波法** — `list_advertisers` 过滤 `campaignsCount > 0` → 并行 `get_daily_metrics(level=ADVERTISER)` 找真有数据的账户
+2. **不调 `sync_advertiser_data`** — 巡检/日报场景巨慢，让用户手动刷新
+3. **单次超时 15s**，`as_completed` 设 `timeout=30`
+4. **不查 `level=ADGROUP/CAMPAIGN/AD`** — 平台只同步了 ADVERTISER 级别报告
+5. **`balance` 是字符串** — 需 `float()` 转换后再格式化
+6. **调用代码** — 见 `ads-tiktok-mcp` skill 的 `mcp()` 函数定义
+
+---
 
 ## Example outputs
 ### Open the ad building page

@@ -26,3 +26,12 @@ Recommended Hermes rendering behavior:
 4. Use `ui_actions` only for frontend actions such as opening a page or panel.
 5. Use `tool_requests` only to trigger backend tools after permission and confirmation checks.
 6. Never display raw JSON to ordinary users unless debug mode is enabled.
+
+
+## MCP 执行层（Vidau Agent 对话模式）
+
+本 skill 在 Vidau Agent 对话中使用时（非 Hermes AI助手面板），必须配合 `ads-tiktok-mcp` skill 一起加载。
+
+- `ads-tiktok-mcp` 提供 `list_advertisers`、`get_daily_metrics`、`create_campaign` 等 10 个 MCP 工具
+- 详细映射见 SKILL.md 的「执行上下文说明」章节
+- 关键规则：两步滤波法、不调 sync、超时 15s、不查 ADGROUP/AD 级别报告
