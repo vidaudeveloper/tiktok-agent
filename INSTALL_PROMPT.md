@@ -1,6 +1,6 @@
 # TikTok Ads MCP — 安装提示词
 
-将此提示词**完整复制粘贴**到 WorkBuddy / Hermes / Cursor 等 AI Agent 对话中，即可自动完成 skills 安装：
+将此提示词**完整复制粘贴**到 WorkBuddy / AI Agent / Cursor 等 AI Agent 对话中，即可自动完成 skills 安装：
 
 ```
 请帮我安装 TikTok Ads MCP 工具集，包含以下步骤：
@@ -17,7 +17,7 @@ https://github.com/vidaudeveloper/tiktok-agent/blob/main/SKILL.md
 
 该 skill 使用 HTTP JSON-RPC 直连 tiktok.vidau.ai 的 MCP 接口，无需浏览器登录。
 
-## Step 2: 安装知识库子 Skill（tiktok-hermes-agent-knowledge）
+## Step 2: 安装知识库子 Skill（tiktok-ai-agent-agent-knowledge）
 
 从 GitHub 仓库读取知识库子 skill：
 https://github.com/vidaudeveloper/tiktok-agent/tree/main/skills/knowledge
@@ -25,7 +25,7 @@ https://github.com/vidaudeveloper/tiktok-agent/tree/main/skills/knowledge
 这个 skill 负责：
 - TikTok 广告平台的自然语言意图识别与业务路由
 - 10 大业务模块覆盖（开户、授权、同步、报表、素材、搭建、预警等）
-- Hermes AI 助手面板的 JSON 响应格式
+- AI Agent AI 助手面板的 JSON 响应格式
 - 缺失槽位检测与用户引导
 - ⚠️ 已内置 MCP 执行层配置（`related_skills: [ads-tiktok-mcp]`），自动关联两步滤波法等优化策略
 

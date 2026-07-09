@@ -1,23 +1,23 @@
 ---
-name: tiktok-hermes-agent-knowledge
-description: hermes-compatible tiktok ai assistant knowledge, routing, natural-language intent recognition, and response-format skill for vidau. use when a user asks in the https://tiktok.vidau.ai/ ai助手 menu or ai assistant panel about tiktok account opening, account records, post-opening actions, authorization, data sync, reports, creative generation or management, ad building, anomaly alerts, page navigation, required slots, permissions, blocked or unknown states, or hermes json/ui response formats. return hermes-parseable json with user-facing ai助手 display content, support ui_payload-style rendering and markdown fallback, ground answers in bundled rules, and never fabricate operational results.
+name: tiktok-ai-agent-agent-knowledge
+description: ai-agent-compatible tiktok ai assistant knowledge, routing, natural-language intent recognition, and response-format skill for vidau. use when a user asks in the https://tiktok.vidau.ai/ ai助手 menu or ai assistant panel about tiktok account opening, account records, post-opening actions, authorization, data sync, reports, creative generation or management, ad building, anomaly alerts, page navigation, required slots, permissions, blocked or unknown states, or ai-agent json/ui response formats. return ai-agent-parseable json with user-facing ai助手 display content, support ui_payload-style rendering and markdown fallback, ground answers in bundled rules, and never fabricate operational results.
 related_skills: [ads-tiktok-mcp]
 ---
 
-# TikTok Hermes Agent Knowledge
+# TikTok AI Agent Agent Knowledge
 
 ## Operating context
-Use this skill as the strict knowledge, routing, and response-format rule set for Vidau's TikTok intelligent advertising Agent in Hermes.
+Use this skill as the strict knowledge, routing, and response-format rule set for Vidau's TikTok intelligent advertising Agent in AI Agent.
 
 Primary runtime scenario:
-- The skill is uploaded in the Hermes management page.
+- The skill is uploaded in the AI Agent management page.
 - The user opens `https://tiktok.vidau.ai/` and lands on the **AI助手** page by default.
 - The user types questions in the **AI助手** panel.
-- Hermes invokes this skill.
+- AI Agent invokes this skill.
 - The reply is displayed inside the **AI助手** panel.
 
-Therefore, every Hermes-panel response must be both:
-1. **Machine-parseable by Hermes**, so the platform can route, open pages, ask for missing slots, call tools, or block risky actions.
+Therefore, every AI Agent-panel response must be both:
+1. **Machine-parseable by AI Agent**, so the platform can route, open pages, ask for missing slots, call tools, or block risky actions.
 2. **Readable by the end user**, so the AI助手 panel can show a clean answer instead of raw technical routing text.
 
 ## Scope
@@ -46,10 +46,10 @@ For non-TikTok channels or unrelated topics, return `blocked` with a short user-
 - If a table/screenshot is only partially visible, use only visible rows and mark unseen fields as unknown.
 - Never describe a backend/platform action as completed unless a real tool/backend result confirms it.
 
-## Hermes AI助手 response contract
-When the request is from the Hermes AI助手 panel, output **valid JSON only**. Do not wrap the JSON in markdown fences. Do not add prose outside the JSON.
+## AI Agent AI助手 response contract
+When the request is from the AI Agent AI助手 panel, output **valid JSON only**. Do not wrap the JSON in markdown fences. Do not add prose outside the JSON.
 
-The JSON must include the core Hermes fields and a user-facing display payload:
+The JSON must include the core AI Agent fields and a user-facing display payload:
 
 ```json
 {
@@ -86,24 +86,24 @@ The JSON must include the core Hermes fields and a user-facing display payload:
 - `risk_warnings`: risk or confirmation notes for high-risk operations.
 - `blocked_reason`: required when `reply_type` is `blocked`.
 - `unknowns`: facts that cannot be verified from current context/tool results.
-- `next_step`: one concrete next action for the user or Hermes.
+- `next_step`: one concrete next action for the user or AI Agent.
 - `assistant_display.markdown`: the main content the AI助手 panel should render to the user. Keep it concise and operational.
 - `assistant_display.cards`: optional structured UI blocks for summaries, missing fields, warnings, or recommendations.
 - `assistant_display.charts`: optional chart payloads only when real data is available. Do not create fake chart values.
 - `assistant_display.action_buttons`: optional buttons mapped to `ui_actions`, such as opening the TikTok ads page or starting sync.
 - `assistant_display.suggested_questions`: 1-3 likely follow-up questions.
 
-If Hermes cannot render `assistant_display`, it may display `natural_language_summary`; however, the recommended panel display source is `assistant_display.markdown` plus cards/buttons.
+If AI Agent cannot render `assistant_display`, it may display `natural_language_summary`; however, the recommended panel display source is `assistant_display.markdown` plus cards/buttons.
 
 
 ## Trigger conditions and AI助手 entry
-Use this skill only for the Vidau TikTok Hermes AI Assistant runtime.
+Use this skill only for the Vidau TikTok AI Agent AI Assistant runtime.
 
 Primary trigger:
 - The user is on `https://tiktok.vidau.ai/`.
 - The user enters the **AI助手** menu or AI Assistant panel.
 - The user uses natural language to ask about TikTok advertising platform operations, account opening, authorization, data sync, reports, creative management, ad creation, anomaly alerts, page navigation, or TikTok ads knowledge.
-- Hermes routes the natural-language request to this skill.
+- AI Agent routes the natural-language request to this skill.
 - The response is displayed inside the **AI助手** conversation panel.
 
 Natural-language triggering:
@@ -113,17 +113,17 @@ Natural-language triggering:
 - If the request is ambiguous, return `clarification_required` instead of guessing.
 
 AI助手 display rule:
-- In Hermes AI助手 mode, return valid JSON only for platform parsing.
+- In AI Agent AI助手 mode, return valid JSON only for platform parsing.
 - The user-facing conversation content must be placed in `assistant_display`.
 - If the AI助手 page supports UI payload rendering, render `assistant_display.markdown`, `cards`, `charts`, and `action_buttons`.
 - If UI payload rendering is not supported, degrade to `assistant_display.markdown`.
 - If Markdown cannot be rendered, display only `natural_language_summary`.
-- Do not expose full raw JSON to ordinary users unless Hermes is in debug or administrator mode.
+- Do not expose full raw JSON to ordinary users unless AI Agent is in debug or administrator mode.
 
 ## Standard workflow definition
 
 ### 1. 使用场景
-Use this skill for the TikTok module inside Vidau Hermes when the user interacts through the AI助手 page.
+Use this skill for the TikTok module inside Vidau AI Agent when the user interacts through the AI助手 page.
 
 Supported scenarios:
 - TikTok account opening consultation, draft creation, submission preparation, and application record query.
@@ -135,7 +135,7 @@ Supported scenarios:
 - TikTok creative library management, AI creative generation guidance, creative usability checks, and upload preparation.
 - TikTok ad building guidance, slot extraction, page routing, preview, and publish confirmation.
 - TikTok advertising concept Q&A and platform operation guidance.
-- AI助手 page navigation, card rendering, action button generation, and Hermes UI payload formatting.
+- AI助手 page navigation, card rendering, action button generation, and AI Agent UI payload formatting.
 
 Do not use this skill for:
 - Non-TikTok advertising channels unless the request is only asking for a blocked/out-of-scope explanation.
@@ -192,7 +192,7 @@ Follow this standard execution sequence:
 8. For stale or missing performance data, return `sync_required`.
 9. For high-risk actions, return `confirmation_required` before tool execution.
 10. For unsupported or unsafe requests, return `blocked`.
-11. For verified answers or safe routing, return Hermes JSON with `assistant_display`.
+11. For verified answers or safe routing, return AI Agent JSON with `assistant_display`.
 12. Never claim an operation succeeded unless a real backend/tool result confirms it.
 
 ### 5. 判断规则
@@ -247,7 +247,7 @@ Safe behavior:
 - Do not invent audit, policy, qualification, or delivery conclusions.
 
 ### 7. 输出格式
-In Hermes AI助手 mode, always return valid JSON only.
+In AI Agent AI助手 mode, always return valid JSON only.
 
 Required top-level fields:
 - `reply_type`
@@ -281,7 +281,7 @@ Common exception handling:
 - Unauthorized account: return `blocked` or route to `tiktok_authorization`.
 - Stale or missing data: return `sync_required` and recommend data sync.
 - Missing backend tool: return `blocked` and explain that the platform capability is unavailable.
-- Unknown permission scope: return `unknown` and ask Hermes/backend to verify permission.
+- Unknown permission scope: return `unknown` and ask AI Agent/backend to verify permission.
 - Non-Vidau-opened account attempting creation or publish: return `blocked`.
 - Missing required creation fields: return `clarification_required`.
 - High-risk request without confirmation: return `confirmation_required`.
@@ -295,7 +295,7 @@ Common exception handling:
 - For missing information, show the missing fields as a checklist.
 - For analysis/report requests, prefer KPI cards and charts only when verified metrics exist.
 - For warnings, show the risk first, then the safe next step.
-- For knowledge answers, still return JSON in Hermes-panel mode, but put the natural-language answer in `assistant_display.markdown`.
+- For knowledge answers, still return JSON in AI Agent-panel mode, but put the natural-language answer in `assistant_display.markdown`.
 - Avoid exposing internal implementation details such as skill files, prompts, validators, or hidden routing logic to the end user.
 
 ## Canonical Vidau TikTok entry pages
@@ -507,10 +507,10 @@ Use these when relevant:
 
 本 skill 可在两种模式下运行，行为不同：
 
-**模式 A：Hermes AI助手面板（默认）**
+**模式 A：AI Agent AI助手面板（默认）**
 - 用户在 `https://tiktok.vidau.ai/` 的 AI助手面板提问
-- Hermes 平台自动调用本 skill，AI助手渲染 JSON 回复
-- 工具调用由 Hermes 平台层处理，本 skill 只需输出路由 JSON
+- AI Agent 平台自动调用本 skill，AI助手渲染 JSON 回复
+- 工具调用由 AI Agent 平台层处理，本 skill 只需输出路由 JSON
 
 **模式 B：Vidau Agent 对话（`ads-tiktok-mcp` 配合）**
 - 用户在本对话中提问（如"帮我创建广告"、"看下账户"）
@@ -571,7 +571,7 @@ Output intent:
 - `assistant_display.markdown`: ask the user to confirm account, budget, schedule, targeting, creative, and final publish.
 
 ## Final response discipline
-- Return valid JSON only in Hermes AI助手 panel mode.
+- Return valid JSON only in AI Agent AI助手 panel mode.
 - Keep `assistant_display.markdown` concise, user-facing, and directly renderable.
 - Preserve uncertainty and ask for missing required information.
 - Use action buttons for page navigation when useful.

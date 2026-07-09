@@ -9,9 +9,9 @@
 
 ## 版本更新：v1.0.0 → v2.0.0
 
-| 维度 | v1.0.0 (Hermes) | v2.0.0 (MCP) |
+| 维度 | v1.0.0 (AI Agent) | v2.0.0 (MCP) |
 |------|----------------|--------------|
-| 架构 | Hermes Agent Runtime | **MCP HTTP JSON-RPC 直连** |
+| 架构 | AI Agent Agent Runtime | **MCP HTTP JSON-RPC 直连** |
 | 登录 | 需要 VidAU SSO | **不需要登录** |
 | 速度 | 慢（需浏览器） | **极快（~1s/调用）** |
 | 模块数 | 4 个独立子模块 | **1 个主 Skill + 1 个知识库子 Skill** |
@@ -34,7 +34,7 @@
 
 - 自然语言意图识别与业务路由
 - TikTok 广告平台知识问答
-- Hermes AI 助手面板 JSON 响应格式
+- AI Agent AI 助手面板 JSON 响应格式
 - ✅ v2.1.0 已内置 MCP 执行层配置（`related_skills: [ads-tiktok-mcp]`），自动使用两步滤波法等优化策略
 
 ---
@@ -43,12 +43,12 @@
 
 ### 方式一：一键安装（推荐）
 
-直接复制 [INSTALL_PROMPT.md](INSTALL_PROMPT.md) 中的安装提示词，粘贴到 WorkBuddy / Hermes / Cursor 对话中。
+直接复制 [INSTALL_PROMPT.md](INSTALL_PROMPT.md) 中的安装提示词，粘贴到 WorkBuddy / AI Agent / Cursor 对话中。
 
 ### 方式二：手动安装
 
 1. 克隆本仓库
-2. 将根目录 `SKILL.md` 导入到 WorkBuddy / Hermes 的 Skill 管理中
+2. 将根目录 `SKILL.md` 导入到 WorkBuddy / AI Agent 的 Skill 管理中
 3. 将 `skills/knowledge/` 目录也作为子 Skill 导入
 4. （可选）配置 MCP 服务器端点
 
@@ -138,7 +138,7 @@ tiktok-agent/
 
 - **v2.1.0** (2026-07-09)：知识库 skill 升级 — 内置 MCP 执行层关联（`related_skills: [ads-tiktok-mcp]`），source_and_validation 新增 MCP 执行层说明
 - **v2.0.0** (2026-07-08)：MCP 架构升级，三合一模块，直连 HTTP，速度提升 30 倍
-- **v1.0.0** (2026-07-03)：Hermes 初始版本，4 个独立子模块
+- **v1.0.0** (2026-07-03)：AI Agent 初始版本，4 个独立子模块
 
 ---
 

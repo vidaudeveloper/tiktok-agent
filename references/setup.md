@@ -4,7 +4,7 @@
 
 | 维度 | v1.0.0 | v2.0.0 |
 |------|--------|--------|
-| 运行方式 | Hermes Agent + 浏览器模拟 | **MCP HTTP JSON-RPC 直连** |
+| 运行方式 | AI Agent Agent + 浏览器模拟 | **MCP HTTP JSON-RPC 直连** |
 | 需要登录 | 是（VidAU SSO） | **否（API Key 认证）** |
 | 子模块数 | 4 个独立 Skill | **1 个主 Skill + 1 个知识库 Skill** |
 | 响应速度 | 慢 | **极快（~1s/调用）** |
@@ -15,7 +15,7 @@
 
 ### 环境要求
 
-1. AI Agent 运行环境（WorkBuddy / Hermes / Cursor / Claude Desktop 等）
+1. AI Agent 运行环境（WorkBuddy / AI Agent / Cursor / Claude Desktop 等）
 2. 支持 Skill 上传和管理的平台
 3. 有效的 API Key（已内置在 Skill 文件中）
 4. TikTok 广告账户（已在 VidAU 平台授权）
@@ -48,7 +48,7 @@
 
 1. 进入 `skills/knowledge/` 目录
 2. 将该目录（或目录中的 `SKILL.md`）导入到 Skill 管理中
-3. 确认 `tiktok-hermes-agent-knowledge` skill 已被识别
+3. 确认 `tiktok-ai-agent-agent-knowledge` skill 已被识别
 
 #### Step 3: 验证安装
 
@@ -157,7 +157,7 @@ A: 回复"打开广告面板"，AI 会在本机启动 Chrome 打开 VidAU 平台
 
 1. 备份旧的 skill 配置
 2. 删除旧的 4 个子 skill（creation / inspection / knowledge / report）
-3. 安装新的 `ads-tiktok-mcp` 主 Skill 和 `tiktok-hermes-agent-knowledge` 知识库 Skill
+3. 安装新的 `ads-tiktok-mcp` 主 Skill 和 `tiktok-ai-agent-agent-knowledge` 知识库 Skill
 4. 验证功能正常
 
 ---
