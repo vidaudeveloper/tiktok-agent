@@ -83,9 +83,9 @@ with ThreadPoolExecutor(max_workers=5) as ex:
 
 1. **`get_daily_metrics` 的 `level=ADGROUP` / `level=CAMPAIGN` 基本都返回空** — 平台只同步了 ADVERTISER 级别的报告数据。**永远先查 `level=ADVERTISER`**，只有它有数据。
 2. **`sync_advertiser_data` 巨慢且容易超时（60s+）** — 大账户（Ufun 50+ Campaign）同步请求大概率卡死。**不要在交互式查询中调 sync！** 让用户在平台手动刷新。
-3. **27 个账户里常常只有 1-2 个真正有今日数据** — 不要对所有账户发 `get_daily_metrics`，先用 `list_advertisers` 的 `campaignsCount > 0` 过滤，再对子集查 ADVERTISER 级别。
+3. **大多数账户里常常只有少量真正有今日数据** — 不要对所有账户发 `get_daily_metrics`，先用 `list_advertisers` 的 `campaignsCount > 0` 过滤，再对子集查 ADVERTISER 级别。
 4. **`ThreadPoolExecutor.as_completed` 必须设 `timeout`** — 不加 timeout 的话，一个请求卡 60 秒你就得等 60 秒。
-5. **Total time: 滤波法 < 10s vs 全量扫 5min** — 速度差 30 倍。
+5. **Total time: 滤波法耗时显著低于全量扫描** — 速度大幅提升。
 
 ### MCP 请求超时设置
 
