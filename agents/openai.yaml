@@ -1,5 +1,0 @@
-interface:
-  display_name: TikTok AI Agent AI Assistant
-  short_description: Route and answer Vidau TikTok AI Assistant questions with strict AI Agent JSON and UI display rules.
-  icon: brain
-  color: "#2563EB"
