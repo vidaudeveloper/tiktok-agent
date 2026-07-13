@@ -1,6 +1,6 @@
 # 广告创建流程（ad-creation-flow）
 
-本文件为「模块一：广告创建」的详细流程规范。所有 MCP 调用遵循 `references/mcp-client.md`，鉴权 key 取自环境变量 `TIKTOK_MCP_API_KEY`。
+本文件为「模块一：广告创建」的详细流程规范。所有 MCP 调用遵循 `references/mcp-client.md`，Ads MCP 的 API Key 已内置脱敏（硬编码 `tk_1bfa…5xxx`，SSE 端点），无需环境变量。
 
 ---
 
@@ -10,7 +10,7 @@
 2. 账户余额 — 是否充足（`balance` 非 `null` 且 > 0）
 3. 推广目标（objective_type）— 是否已选择（枚举见 enums-reference §1）
 4. 优化目标（optimization_goal）— 是否已选择（枚举见 enums-reference §3）
-5. 素材 — 是否已上传且审核通过（**MCP 暂无上传接口**，见下方兜底）
+5. 素材 — 是否已上传且审核通过（素材上传后端端点已实现，MCP 工具注册前见下方兜底）
 6. 定向 — 年龄、性别、地区、兴趣、行为、设备等
 7. 预算 — 日预算 / 总预算
 8. 出价 — 出价策略与金额（映射见 enums-reference §5）
@@ -27,7 +27,7 @@
 当用户选择同一广告账户 + 同一推广目标 + 同一优化目标时，检测该组合 **7 日内预算平均值**。当前输入超/低于均值阈值范围时，提示建议预算区间（如「近 7 日同类广告组日均预算 $45±$15，建议填写 $30–$60」）。
 
 ### 素材兜底（关键）
-- `create_ad` 需要 `creative_id` 或 `video_id`，但 **MCP 当前无上传素材工具**。
+- `create_ad` 需要 `creative_id` 或 `video_id`。平台后端已实现素材上传端点（`save-from-url` / `upload-to-tiktok`，对应 spec 的 `material_save_from_url` / `material_upload_to_tiktok`）；MCP 网关注册工具后 Agent 可自动取得，注册前按下方兜底步骤引导用户先上传。
 - 若用户尚未上传素材：明确提示「需要先上传素材」，并给出两种方式：
   1. 打开面板在 VidAU 上传（`打开面板` 指令，见 SKILL.md）；
   2. 若环境支持，fallback 浏览器上传。

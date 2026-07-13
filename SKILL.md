@@ -1,14 +1,14 @@
 ---
 name: ads-tiktok-mcp
-description: 直连 VidAU TikTok MCP（tiktok.vidau.ai）接口——无需登录、最快路径。用 execute_code + requests 发 JSON-RPC 到 /api/mcp/tools，支持广告巡检、预警、Campaign/Adgroup/Ad CRUD、日报/周报。常规操作走 MCP；仅面板打开、素材上传、TikTok OAuth 这类 MCP 做不到的才 fallback 浏览器。
-version: 2.3.0
+description: 直连 VidAU TikTok MCP（tiktok.vidau.ai）SSE 流式端点——无需登录、内置脱敏 Key。用 execute_code + requests 经 /api/mcp/sse 调用，支持广告巡检、预警、Campaign/Adgroup/Ad CRUD、日报/周报。常规操作走 MCP；仅面板打开、素材上传、TikTok OAuth 这类 MCP 做不到的才 fallback 浏览器。
+version: 2.4.0
 category: advertising
-tags: [tiktok, ads, mcp, vidau, reporting, inspection]
+tags: [tiktok, ads, mcp, vidau, reporting, inspection, creative]
 ---
 
 # TikTok Ads MCP — 直连 HTTP（最快路径）
 
-**无需登录、无需 Python mcp 包。** 用 `execute_code` + `requests` 直接 POST JSON-RPC 到 VidAU MCP tools 端点。
+**无需登录、无需 Python mcp 包。** 用 `execute_code` + `requests` 经 SSE 流式端点（`/api/mcp/sse?apiKey=…`）调用 VidAU MCP。
 
 > 本技能是 **VidAU MCP 的封装**（VidAU 再封装 TikTok）。**字段/枚举以真实 VidAU MCP（`tiktok.vidau.ai`）返回体 / 接受值为准（VidAU 简化值，如 `LEAD_GEN`/`WEB_CONVERSIONS`/`VIDEO_PLAY_3S`/`CPC`/`CPM`/`OCPM`）**，权威对照见 `references/enums-reference.md`（该文件同时给出可直接导入的 Python 常量，供调用前 `validate_args` 预校验；校验同时放行官方对应值，确保不报错）。
 
@@ -19,12 +19,22 @@ tags: [tiktok, ads, mcp, vidau, reporting, inspection]
 ```
 ads-tiktok-mcp/
 ├── SKILL.md                     # 总入口：调用规范、工具清单、业务模块、渲染/定时/坑
-└── references/
-    ├── mcp-client.md            # ★ 唯一正确的 MCP 调用实现（容错/重试/滤波/校验/健康/排查）
-    ├── enums-reference.md       # ★ VidAU 简化枚举对照 + 可直接导入的 Python 常量
-    ├── ad-creation-flow.md      # 模块一：广告创建流程
-    ├── ad-inspection-rules.md   # 模块二：AI 巡检规则
-    └── report-format.md         # 模块三：日报/周报格式
+├── references/
+│   ├── mcp-client.md            # ★ 唯一正确的 MCP 调用实现（容错/重试/滤波/校验/健康/排查）
+│   ├── enums-reference.md       # ★ VidAU 简化枚举对照 + 可直接导入的 Python 常量
+│   ├── ad-creation-flow.md      # 模块一：广告创建流程
+│   ├── ad-inspection-rules.md   # 模块二：AI 巡检规则
+│   └── report-format.md         # 模块三：日报/周报格式
+└── skills/
+    ├── knowledge/               # 知识层子 Skill（意图路由/知识问答/格式化）
+    │   └── SKILL.md
+    └── creative/                # ★ 素材创作层子 Skill（图片/视频/BGM/批量/爆款）
+        ├── SKILL.md             # ★ 创作总入口（与 Ads 衔接协议）
+        ├── references/
+        │   └── creative-mcp-client.md  # Creative MCP 调用实现
+        ├── L0-foundation/       # 基础层：平台/任务追踪/Prompt 工程/叙事路由
+        ├── L1-capability/       # 生产层：一键生成/脚本转视频/批量编排
+        └── L2-vertical/         # 垂直场景：TikTok爆款/商品链接转视频
 ```
 
 > 任何模块需要调用 MCP，都必须 `from references.mcp_client import mcp, mcp_retry, validate_args`（或内联其实现），禁止重复造轮子。
@@ -34,8 +44,7 @@ ads-tiktok-mcp/
 ## 前置条件
 
 ```bash
-# API Key 已内置预配置（脱敏，末尾 15 位以 x 代替）
-# API Key 已内置预配置（脱敏，末尾 15 位以 x 代替），无需自行设置
+# API Key 已内置预配置（脱敏，末尾 15 位以 x 代替），无需自行设置环境变量
 ```
 
 所有调用逻辑（健壮 `mcp()`、重试、两步滤波、时区、字段类型、参数预校验、健康检查）统一在 **`references/mcp-client.md`**，各模块不得自行实现请求。
@@ -47,31 +56,91 @@ ads-tiktok-mcp/
 ## 核心调用（速览，完整实现见 mcp-client.md）
 
 ```python
-import requests, json, os
+import requests, json, threading, queue
+from urllib.parse import urljoin
 
 API_KEY = "tk_1bfa861961110ed257b517680da9efeb5xxxxxxxxxxxxxxx"
-TOOLS_URL = "https://tiktok.vidau.ai/api/mcp/tools"
+SSE_URL = f"https://tiktok.vidau.ai/api/mcp/sse?apiKey={API_KEY}"
+
+# 完整容错/重试/两步滤波实现见 references/mcp-client.md；此处为 SSE 调用核心。
+_sse = {"conn": None, "lock": threading.Lock()}
+
+def _open_sse():
+    sess = requests.Session()
+    resp = sess.get(SSE_URL, headers={"Accept": "text/event-stream"}, stream=True, timeout=30)
+    c = {"sess": sess, "resp": resp, "post_url": None, "pending": {}, "nid": 1,
+         "ilock": threading.Lock(), "ready": threading.Event(), "failed": False}
+    def reader():
+        et = None; d = []
+        try:
+            for line in resp.iter_lines(decode_unicode=True):
+                if line is None:
+                    continue
+                if line == "":
+                    if et == "endpoint":
+                        u = "".join(d).strip()
+                        pu = u if u.startswith("http") else urljoin(SSE_URL, u)
+                        if "apiKey=" not in pu:
+                            pu += ("&" if "?" in pu else "?") + f"apiKey={API_KEY}"
+                        c["post_url"] = pu; c["ready"].set()
+                    elif et == "message":
+                        try:
+                            m = json.loads("".join(d))
+                        except ValueError:
+                            m = None
+                        if isinstance(m, dict) and "id" in m:
+                            q = c["pending"].pop(m["id"], None)
+                            if q:
+                                q.put(m)
+                    et = None; d = []
+                    continue
+                if line.startswith("event:"):
+                    et = line[6:].strip()
+                elif line.startswith("data:"):
+                    d.append(line[5:].lstrip())
+        except Exception:
+            pass
+        c["failed"] = True; c["ready"].set()
+    threading.Thread(target=reader, daemon=True).start()
+    if not c["ready"].wait(20):
+        c["failed"] = True; raise RuntimeError("MCP SSE 握手超时")
+    return c
 
 def mcp(name, args=None, timeout=15):
-    if not API_KEY:
-        raise RuntimeError("缺少 TIKTOK_MCP_API_KEY")
-    payload = {"jsonrpc":"2.0","method":"tools/call",
-               "params":{"name":name,"arguments":args or {}},"id":1}
+    with _sse["lock"]:
+        if _sse["conn"] is None or _sse["conn"].get("failed") or _sse["conn"]["resp"].raw.closed:
+            _sse["conn"] = _open_sse()
+        c = _sse["conn"]
+    if c.get("failed"):
+        raise RuntimeError("MCP SSE 连接已断开，请重新运行会话")
+    with c["ilock"]:
+        rid = c["nid"]; c["nid"] += 1
+    q = queue.Queue(); c["pending"][rid] = q
+    payload = {"jsonrpc":"2.0","method":"tools/call","params":{"name":name,"arguments":args or {}},"id":rid}
     try:
-        r = requests.post(f"{TOOLS_URL}?apiKey={API_KEY}", json=payload,
-                          headers={"Content-Type":"application/json"}, timeout=timeout)
+        r = requests.post(c["post_url"], json=payload, timeout=timeout)
     except requests.exceptions.Timeout:
-        raise RuntimeError(f"MCP 请求超时（>{timeout}s）：{name}")
+        c["pending"].pop(rid, None); raise RuntimeError(f"MCP 请求超时（>{timeout}s）：{name}")
     except requests.exceptions.RequestException as e:
-        raise RuntimeError(f"MCP 网络错误：{e}")
-    try:
-        resp = r.json()
-    except ValueError:
-        raise RuntimeError(f"MCP 返回非 JSON（HTTP {r.status_code}）")
-    if "error" in resp:
-        err = resp["error"] or {}
-        raise RuntimeError(f"MCP 错误 [{err.get('code')}]：{err.get('message')}")
-    result = resp.get("result")
+        c["pending"].pop(rid, None); raise RuntimeError(f"MCP 网络错误：{e}")
+    msg = None
+    if r.status_code == 200 and r.content:
+        try:
+            msg = r.json()
+        except ValueError:
+            msg = None
+    if msg is not None and ("result" in msg or "error" in msg):
+        pass
+    else:
+        try:
+            msg = q.get(timeout=timeout)
+        except queue.Empty:
+            c["pending"].pop(rid, None); raise RuntimeError(f"MCP 响应超时（>{timeout}s）：{name}")
+    c["pending"].pop(rid, None)
+    if "error" in msg:
+        err = msg["error"] or {}
+        raise RuntimeError(f"MCP 错误 [{err.get('code','?')}]：{err.get('message','')}")
+    result = msg.get("result")
     if not result:
         raise RuntimeError(f"MCP 返回空 result：{name}")
     content = result.get("content") or []
@@ -83,7 +152,7 @@ def mcp(name, args=None, timeout=15):
         return content[0]["text"]
 ```
 
-**速度优势**：直接 POST `/api/mcp/tools`，跳过 SSE 握手（SSE 有 cold start 延迟）。
+**传输方式**：经 SSE 流式端点（`/api/mcp/sse?apiKey=…`）调用——`_sse_reader` 监听 `endpoint` 事件拿到消息端点后 POST JSON-RPC，结果经同一 SSE 流异步回传。
 
 ---
 
@@ -183,14 +252,14 @@ ad = mcp("create_ad", {
     "adgroup_id": "本地 adgroup UUID",       # 必填
     "ad_text": "广告文案",                    # 必填
     "ad_name": "可选名称",
-    "creative_id": "素材库UUID",              # 需先用面板/浏览器上传（MCP 暂无上传接口）
+    "creative_id": "素材库UUID",              # 可经素材库 upload-to-tiktok 端点上传后回填（见模块四）
     "video_id": "已上传的TikTok视频ID",
     "cover_url": "封面图URL",
     "call_to_action": "LEARN_MORE",           # 默认 LEARN_MORE / DYNAMIC=动态优选
     "landing_page_url": "落地页URL"
 })
 ```
-- ⚠️ **MCP 暂无素材上传工具**：`creative_id`/`video_id` 需先通过面板或浏览器上传取得。无素材时按 ad-creation-flow 的兜底步骤引导，不要直接提交创建。
+- ⚠️ **素材上传能力状态**：平台后端已实现 `material_save_from_url` / `material_upload_to_tiktok` 两个 REST 端点（见模块四）；但 **MCP 网关尚未注册这两个工具**。在 MCP 工具可用前，Agent 按 ad-creation-flow 的兜底步骤引导用户先上传；工具注册后 `creative_id`/`video_id` 可由 Agent 自动取得。
 
 ### 9. get_daily_metrics — 日报指标
 ```python
@@ -225,6 +294,7 @@ mcp("sync_advertiser_data", {
 | 广告创建 | 创建广告、建广告、投广告、投放广告、我要投放、帮我投放、创建TikTok广告、搭建广告、批量创建广告、批量投放、帮我把广告发布出去、推广投放 |
 | AI 巡检 | 广告巡检、巡检、开启巡检、启动巡检、开始巡检、监控广告、AI巡检 |
 | 日报/周报 | 生成日报、给我生成日报、生成周报、给我生成周报、日报数据、昨天日报、今日数据报告、周报数据、本周周报、根据我的格式生成日报、根据我的格式生成周报 |
+| **素材创作** | **做个视频、生成视频、创作素材、AI生图、做个海报、生成图片、帮我设计、素材创作、创意视频、广告素材、爆款视频、批量生图、这个链接做个视频** |
 
 > 说明：「确认 / 好的 / 需要 / 开始」**不是全局触发词**。它们仅在**本技能已发出巡检询问的上下文**中，表示用户同意开启巡检；不会因对话里出现这些词就误触发。
 
@@ -289,6 +359,63 @@ mcp("sync_advertiser_data", {
 
 ---
 
+## 模块四：素材创作（详见 skills/creative/SKILL.md）★ 一体化核心
+
+> **本模块将 VidAU Creative Agent 的素材生成能力融入 TikTok Ads Specialist，实现「创作→投放」一个 Agent 全链路。**
+> 完整文档在 `skills/creative/SKILL.md`（含 L0/L1/L2 三层 11 个子 Skill）。此处为执行层的衔接摘要。
+
+### 能力概览
+
+| 创作类型 | Skill 层 | MCP 工具 | 典型场景 |
+|----------|---------|----------|----------|
+| 单张图片 / 单个短视频 ≤15s | L1 creative-direct | `creative_generate_image` / `creative_generate_video` | 快速产出一条广告素材 |
+| 多镜头广告视频 16–120s | L1 script2film | `creative_submit_script2film` | 品牌片 / 功能展示 |
+| 批量爆款变体（TikTok 专属） | **L2 trend-viral-short** | `creative_submit_batch_variants` | A/B 测试矩阵、hook 测试 |
+| 商品链接→视频 | **L2 product-url-to-video** | 爬取 + 任意 L1 MCP | 贴链接自动出视频 |
+| BGM 生成/混入 | L0+L1 | `creative_generate_bgm` / `creative_mux_bgm_into_video` | 视频配乐 |
+
+### Creative MCP 端点（独立于 TikTok Ads MCP）
+
+> **鉴权方式**：走平台会话（`vidau_user_id` header），**无需独立 API Key**。
+> 端点: `https://creative.vidau.ai/mcp`（Streamable HTTP 模式）
+>
+> 配置参考：`{"url": "https://creative.vidau.ai/mcp", "enabled": true}`
+
+调用实现见 `skills/creative/references/creative-mcp-client.md`（与 mcp-client.md 对齐的容错/重试模式）。
+
+### ★ 创作→投放衔接协议
+
+当用户意图同时包含「创作」+「投放」时：
+
+1. **Creative Skill 产素材** → 返回 `{ video_url, image_url, download_url, artifacts }`
+2. **询问用户是否用于投放** → 用户确认
+3. **映射到 Ads 参数**：
+   - 图片 URL → `create_ad.cover_url`（✅ 直接可用）
+   - 视频 download URL → 经 `upload-to-tiktok` 端点上传至 TikTok CDN 得到 `video_id`（**后端已实现，待 MCP 网关注册工具**）
+4. **进入模块一创建流程** → `create_campaign` → `create_adgroup` → `create_ad({ cover_url: <产出URL> })`
+5. 返回广告 ID + 触发巡检
+
+### 当前限制 & 解决路线图
+
+| 限制 | 状态 | 解决方案 |
+|------|------|----------|
+| Creative 视频不能直接经 MCP 自动用作 `video_id` | ✅ 后端已实现（upload-to-tiktok 端点），🔧 待 MCP 网关注册工具 | 平台已实现 `POST /api/creatives/[id]/upload-to-tiktok`（对应 `material_upload_to_tiktok`）；MCP 网关注册该工具后 Agent 可直接调用（见 `docs/MCP-MATERIAL-LIBRARY-SPEC.md`） |
+| 图片 URL 可直接做 `cover_url` | ✅ 已解决 | 无缝衔接 |
+| 两个 MCP 端点需分别配置 | ✅ 已解决 | Ads 用 API Key；Creative 走平台会话，无需独立 Key |
+| 创作产出无法自动回写素材库 | ✅ 后端已实现（save-from-url 端点），🔧 待 MCP 网关注册工具 | 平台已实现 `POST /api/creatives/save-from-url`（对应 `material_save_from_url`）；MCP 网关注册该工具后自动入库（标记 vidau.ai 来源） |
+
+> **实现状态**：4 个工具中，`material_save_from_url` / `material_upload_to_tiktok` 的**后端 REST 端点已在平台源码实现**（`tiktok-ads-agent` 仓库）；`material_list` / `material_sync_from_tiktok` 此前已存在。剩余工作为 **MCP 网关将这 4 个端点注册为 MCP 工具**（见 `docs/MCP-MATERIAL-LIBRARY-SPEC.md`，可直接提交 VidAU 工程团队）。
+
+### Prompt Gate 强制规则
+
+**所有图片/视频生成前必须经过 Prompt 工程 Layer**：
+- 图片 → 先加载 `creative-gpt-image2-prompt`（六块协议）
+- 视频 → 先加载 `creative-seedance2-prompt`（SCELA 结构）
+- 脚本 → 先加载 `creative-narrative-router`（叙事结构路由）
+- **禁止**将用户原始文本直接作为 `prompt` 传入 Creative MCP
+
+---
+
 ## 输出渲染策略（降级）
 
 1. 支持 ui_payload → 结构化 JSON + ui_payload（巡检概览/异常卡/建议；日报指标卡/环比/广告列表）
@@ -301,6 +428,7 @@ mcp("sync_advertiser_data", {
 
 - 定时巡检：「每天x点开启巡检」→ 创建定时任务到点执行并推送；「关闭定时巡检」→ 移除。
 - 定时日报/周报：「每天x点生成日报」「每周星期x生成周报」→ 创建定时任务；「根据我的格式生成日报」→ 保存为模板。
+- 定时自动同步：「开启自动同步」→ 创建 cron 任务 `*/15 * * * *`（宿主时区），每 15 分钟自动同步所有已授权账户的广告系列/广告组/广告/素材（见 mcp-client.md §12）；「关闭自动同步」→ 移除该任务。
 - 定时能力由宿主平台提供（cron 表达式 + 宿主时区）；若平台无定时能力，改为在会话内提示用户手动触发。
 
 ---
@@ -359,7 +487,7 @@ if chrome:
 | 需要登录 | ❌ 不需要 | ✅ 需要 VidAU SSO |
 | 速度 | 极快（~1s/调用） | 慢（需浏览器启动） |
 | 适用 | 巡检、查询、轻量写入、广告创建 | 文件上传、OAuth、复杂 UI 交互 |
-| 鉴权 | 环境变量 `TIKTOK_MCP_API_KEY` | 浏览器 session-token cookie |
+| 鉴权 | 内置脱敏 API Key（硬编码 `tk_1bfa…5xxx`，SSE 端点） | 浏览器 session-token cookie |
 
 **规则**：能用 MCP 就用 MCP，只有它搞不定的（上传素材、TikTok OAuth、开面板）才 fallback 浏览器。
 
@@ -368,7 +496,15 @@ if chrome:
 ## 版本基线与变更（Changelog）
 
 - **对齐基线**：真实 **VidAU MCP（`tiktok.vidau.ai`）返回体 / 接受值**（VidAU 简化枚举）；VidAU 再封装 TikTok。
-- **v2.3.0**（本次）
+- **v2.4.0**（本次）
+  - **新增「模块四：素材创作」** —— 融合 VidAU Creative Agent 全部能力（L0/L1/L2 三层 11 个子 Skill）。
+  - 新增 `skills/creative/` 目录：一键生成、脚本转视频、批量编排、TikTok 爆款变体、商品链接转视频。
+  - 创作→投放衔接协议：Creative 产出物直接传入 `create_ad`，实现一个 Agent 全链路。
+  - 新增 Creative MCP 端点支持（`creative.vidau.ai`，平台会话鉴权，标准部署无需独立 Key），与 TikTok Ads MCP 并行。
+  - Prompt Gate 强制规则：所有生成前必须经过 Seedance / GPT-Image-2 Prompt 工程。
+  - `trend-viral-short` 为 TikTok 广告专属爆款 Skill；`product-url-to-video` 支持贴链接自动出视频。
+  - 保留 v2.3.0 全部内容不变；新增模块为增量添加。
+- **v2.3.0**（上次）
   - **按真实 VidAU MCP 返回体校准**：枚举全面切回 **VidAU 简化值**（`LEAD_GEN`/`WEB_CONVERSIONS`/`VIDEO_PLAY_3S`/`CPC`/`CPM`/`OCPM`），确保调用不会因枚举不匹配报错。
   - `validate_args` 同时放行 VidAU 简化值与其官方对应值，无论模型传哪种都不会因枚举校验报错。
   - 保留 v2.1/v2.2 全部修复：API Key 外置、mcp() 容错、重试退避、两步滤波、时区、字段类型、健康检查、巡检误触收窄、status 统一、level 降级、sync 策略统一。

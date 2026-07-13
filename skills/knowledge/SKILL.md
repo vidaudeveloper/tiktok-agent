@@ -1,6 +1,6 @@
 ---
 name: vidau-tiktok-agent-knowledge
-version: 1.1.0
+version: 1.2.0
 category: advertising
 description: >-
   Vidau TikTok AI 助手知识、路由、自然语言意图识别与响应格式化 skill。当用户在
@@ -9,7 +9,8 @@ description: >-
   所需字段、权限、拦截或未知状态，或需要平台可解析的 JSON / UI 响应格式时使用。
   返回平台可解析的 JSON 并附带面向用户的 AI助手展示内容，支持 UI payload 渲染与
   Markdown 降级，答案以内置规则为准，绝不编造操作结果。
-related_skills: [ads-tiktok-mcp]
+  ★ v1.2.0 新增：素材创作路由（tiktok_creative_generation），与 Creative 子 Skill 协同实现创作→投放一体化。
+related_skills: [ads-tiktok-mcp, vidau-tiktok-creative]
 ---
 
 # TikTok AI 助手（Vidau）知识 / 路由 / 响应格式化
@@ -38,6 +39,7 @@ Handle only Vidau TikTok advertising-agent/platform business:
 - 数据同步
 - 数据报表与分析
 - 素材生成与管理
+- **素材创作（AI 生成图片/视频/BGM/脚本/批量变体/爆款短视频/商品链接转视频）**
 - 广告搭建
 - 数据异常预警
 - TikTok 广告内容知识问答
@@ -221,6 +223,7 @@ Intent judgment:
 - Sync, refresh data, latest data, or stale data route to `tiktok_data_sync`.
 - Daily/weekly/monthly report, KPI, spend, CPA, CTR, CVR, ROAS, trend, problem ad, good ad, or optimization request route to `tiktok_data_report_analysis`.
 - Creative, video, copy, title, cover, material, upload, AI generation, or creative fatigue route to `tiktok_creative_management`.
+- **AI creative generation (image/video/BGM/script/batch variants/trend viral/product URL to video) route to `tiktok_creative_generation`.**
 - Create ad, build campaign, publish, preview, budget, targeting, bid, campaign/ad group/ad setting route to `tiktok_campaign_building`.
 - Balance warning, anomaly, alert rule, spend spike/drop, conversion drop, CPA surge, ROAS decline, or creative fatigue alert route to `tiktok_anomaly_alert`.
 - TikTok ad concept or operational knowledge questions route to `tiktok_ad_knowledge_qa`.
@@ -437,7 +440,7 @@ Rules:
 Use for creative library, upload, AI generation, copy/script/title/cover generation, historical ad creative sync, tags, and usability validation.
 Creative sources:
 - user upload
-- AI generation
+- AI generation (★ VidAU Creative MCP — see `tiktok_creative_generation`)
 - historical ad sync
 - TikTok delivered creative sync
 Check items (TikTok 推荐规格):
@@ -458,6 +461,37 @@ Rules:
 - AI-generated materials are drafts before user confirmation.
 - Uploading to TikTok is high-risk and requires confirmation.
 - Do not invent upload/audit/material ID results.
+
+### `tiktok_creative_generation` ★ v1.2.0 新增
+
+Use for **AI-powered creative generation** via VidAU Creative MCP (`creative.vidau.ai`). This module routes creative requests to the `skills/creative/` sub-skill (L0/L1/L2 three-layer architecture) and bridges generated assets to ad creation.
+
+> **Key difference from `tiktok_creative_management`**: this module handles **AI generation workflow** (prompt engineering → MCP call → asset delivery → handoff to ad creation), while `tiktok_creative_management` handles creative library management, upload, and usability checks.
+
+Creative generation capabilities:
+
+| Capability | Layer | Primary MCP | Use Case |
+|------------|-------|-------------|----------|
+| Single image / video (≤15s) | L1 direct | `creative_generate_image/video` | Quick ad creative |
+| Multi-shot script→video (16–120s) | L1 script2film | `creative_submit_script2film` | Brand / feature demo video |
+| Batch trend variants | **L2 trend-viral-short** | `creative_submit_batch_variants` | **TikTok A/B testing matrix** |
+| Product URL → video | **L2 product-url-to-video** | Scrape + L1 MCP | Paste link → auto video |
+| BGM generate/mux | L0+L1 | `creative_generate_bgm` / `creative_mux_bgm_into_video` | Video audio |
+
+Routing rules:
+- User wants "make a video" / "generate image" / "create creative" → route here first
+- Determine creative type (image / short video / long video / batch / from URL)
+- Select matching L1/L2 skill per the Creative SKILL.md routing table
+- **Prompt Gate enforced**: all generation calls must pass through Seedance/GPT-Image-2 prompt skills first
+- After generation, if user intent includes "use for ad" / "publish" → bridge to `tiktok_campaign_building` with generated URLs
+
+Bridge to ad creation (creation → publish protocol):
+1. Creative skill outputs `{ video_url, image_url, download_url, artifacts[] }`
+2. Map to `ads-tiktok-mcp` params: `image_url` → `create_ad.cover_url`; `video_url` → 经 `material_upload_to_tiktok` 端点（后端已实现，待 MCP 工具注册）上传后返回 `video_id`
+3. Hand off to `tiktok_campaign_building` for Campaign → Adgroup → Ad creation flow
+4. Return ad IDs + trigger inspection
+
+Creative MCP 走平台会话鉴权（`vidau_user_id`），无需独立 API Key；Ads MCP 则走内置脱敏 API Key（SSE 端点），两者鉴权方式不同。
 
 ### `tiktok_campaign_building`
 Use for guided ad building.
@@ -583,7 +617,22 @@ Use these when relevant:
 | `tiktok_open_records` | 无MCP工具，走浏览器 | 开户记录查询 |
 | `tiktok_post_open_actions` | 无MCP工具，走浏览器 | 充值/BC绑定 |
 | `tiktok_creative_management` | `create_ad`（带素材参数） | 上传素材到广告 |
+| **`tiktok_creative_generation`** | **Creative MCP（见下方 Creative 工具表）** | **AI 生成图片/视频/BGM/脚本/批量变体，产出物衔接广告创建** |
 | `tiktok_ad_knowledge_qa` | 无MCP工具 | 纯知识问答 |
+
+#### Creative MCP 工具映射（tiktok_creative_generation → skills/creative/）
+
+| Creative 模块 / Skill | MCP 工具 | 用途 |
+|----------------------|----------|------|
+| L1 creative-direct | `creative_generate_image`, `creative_generate_video`, `creative_image_to_video`, `creative_first_frame_to_video` | 一键生成图片/视频 |
+| L1 creative-script2film | `creative_submit_script2film`, `creative_generate_script` | 脚本→多镜头视频 |
+| L1 creative-script2film-keyframes | `creative_submit_script2film_keyframes` | 首尾帧模式视频 |
+| L1 creative-batch-orchestrator | `creative_submit_workflow`, `creative_submit_batch_variants` | 批量混排编排 |
+| **L2 trend-viral-short** | **`creative_submit_batch_variants` (preset: trend_viral_v1)** | **TikTok 爆款批量变体** |
+| **L2 product-url-to-video** | **爬取 + 任意 L1 MCP** | **商品链接→广告视频** |
+| L0 creative-platform | `creative_get_upload_instructions`, `creative_upload_reference`, `creative_estimate`, `creative_list_models` | 上传/估算/模型列表 |
+| L0 creative-job-runner | `creative_get_job`, `creative_list_jobs`, `creative_cancel_job` | 异步任务追踪 |
+| BGM | `creative_generate_bgm`, `creative_mux_bgm_into_video` | 背景音乐 |
 
 ### MCP 调用关键规则（模式 B，对齐 v2.3.0）
 
@@ -594,6 +643,7 @@ Use these when relevant:
 5. **`balance` 是字符串** — 需 `float()` 转换后再格式化
 6. **日期范围以账户时区为准** — 报表/同步的时间范围按 advertiser 时区计算，非服务器时区
 7. **调用代码** — 见 `ads-tiktok-mcp` skill 的 `mcp()` 函数定义；枚举值用 VidAU 简化值（见上方对照表）
+8. **定时自动同步** — 宿主平台每 15 分钟（`*/15 * * * *`）自动同步所有已授权账户的广告系列/广告组/广告/素材（见执行层 mcp-client §12）；该路径独立于交互式同步，不影响实时查询。数据新鲜度以此为准，交互式查询仍按 §2 谨慎 sync。
 
 ---
 
@@ -669,7 +719,13 @@ Output (valid JSON only):
 ---
 
 ## Changelog
-- **v1.1.0**（本次优化）
+- **v1.2.0**（本次更新）
+  - **新增 `tiktok_creative_generation` 路由模块** —— AI 素材创作（图片/视频/BGM/脚本/批量变体/爆款短视频/商品链接转视频）的意图识别与路由。
+  - 新增 Creative MCP 工具映射表（L0/L1/L2 全部 11 个子 Skill → MCP 工具对应关系）。
+  - 创作→投放衔接协议：Creative 产出物自动映射到 `tiktok_campaign_building` 的 `create_ad` 参数。
+  - `related_skills` 新增 `vidau-tiktok-creative`；Scope 新增素材创作描述；触发关键词新增创作类词汇。
+  - 与 `skills/creative/SKILL.md`（v1.0.0）协同工作，共享 Prompt Gate、Job Tracker、计费规则。
+- **v1.1.0**（上次优化）
   - 去除全部历史平台专有字眼，统一为「平台 / AI助手 / Vidau」表述；skill 名称改为 `vidau-tiktok-agent-knowledge`；`agents/openai.yaml` 的 display_name 去掉历史平台标识。
   - **对齐 ads-tiktok-mcp v2.3.0**：
     - `sync_advertiser_data` 规则改为"交互场景默认不调，仅指定账户且数据陈旧时谨慎调用（15s 超时、失败不阻塞）"。

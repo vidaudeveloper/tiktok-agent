@@ -1,0 +1,8 @@
+# Creative Agent 配置
+
+display_name: "VidAU TikTok Creative"
+description: "素材创作能力 —— 图片/视频/BGM/脚本生成，与 TikTok Ads Specialist 协同实现创作→投放一体"
+author: "VidAU"
+version: "1.0.0"
+license: "MIT"
+tags: [creative, video, image, tiktok, ads, generation, batch]
